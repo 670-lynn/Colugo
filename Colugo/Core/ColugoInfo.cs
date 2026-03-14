@@ -8,7 +8,7 @@ namespace Colugo.Core
     {
         public override string Name => "Colugo";
         public override string Description => "A Grasshopper plugin for Rhino";
-        public override Guid Id => new Guid("b3a7c1d2-e4f5-6789-0abc-def123456789");
+        public override Guid Id => new Guid("465dc75a-a7cd-4025-b0e0-dd6602d55da2");
         public override string AuthorName => "";
         public override string AuthorContact => "";
 
