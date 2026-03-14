@@ -1,10 +1,13 @@
 using System;
 using Grasshopper.Kernel;
+using Colugo.ViewModels;
 
-namespace Colugo
+namespace Colugo.Views
 {
     public class ColugoComponent : GH_Component
     {
+        private readonly ColugoViewModel _viewModel = new ColugoViewModel();
+
         public ColugoComponent()
             : base("Colugo", "Col",
                 "A sample Colugo component",
@@ -27,7 +30,8 @@ namespace Colugo
             string input = string.Empty;
             if (!DA.GetData(0, ref input)) return;
 
-            DA.SetData(0, $"Colugo: {input}");
+            _viewModel.Input = input;
+            DA.SetData(0, _viewModel.Output);
         }
 
         public override Guid ComponentGuid => new Guid("c4d5e6f7-a8b9-0123-4567-89abcdef0123");

@@ -8,10 +8,18 @@
     <Title>Colugo</Title>
     <Description>A Grasshopper plugin for Rhino</Description>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <TargetExt>.gha</TargetExt>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="7.13.21348.13001" />
+    <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1001" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ReadMe_Icon.png" />
+    <EmbeddedResource Include="Resources\Colugo_Logo.png" />
   </ItemGroup>
 
   <!-- Post-build: copy GHA to Grasshopper Libraries folder for debugging -->

@@ -1,0 +1,61 @@
+﻿核心元件：Grid Harmony Evaluator (LEED v4.1 Case 3)
+1. 元件概述 (Component Description)
+Colugo - Grid Harmony Evaluator 是一個專為 LEED v4.1 認證設計的高級分析工具。它能讀取 Honeybee 的全年度逐時能源模擬數據，自動判定建築的儲能系統（BESS）與 BIPV 策略是否符合「EA Credit: 電網和諧」中 Case 3 (負載彈性與管理策略) 的得分要求。
+核心價值：將複雜的 8760 小時能源曲線，自動轉化為 LEED 審查所需的「10% 尖峰削減」與「2 小時負荷轉移」合規證明。
+________________
+2. 輸入數據對接 (Input Parameters)
+為了實現精準運算，Colugo 需要從 Honeybee (EnergyPlus) 獲取以下五項關鍵數據流（建議單位均轉為 $kW$）：
+輸入端名稱
+	對應 Honeybee 數據標籤 (EnergyPlus Output)
+	技術定義與用途
+	_totalDemand
+	Facility Total Electricity Demand Rate
+	建築原始總需量：不含再生能源抵消的純負載，用於定義基準尖峰 ($P_{base\_peak}$)。
+	_pvGen
+	Facility Total Produced Electricity Rate
+	BIPV 總產電量：用於分析再生能源對負載形狀的貢獻。
+	_netPurchased
+	Facility Total Purchased Electricity Rate
+	實購電量：考慮 BIPV 與 BESS 介入後的最終電網負載，用於定義設計尖峰 ($P_{proposed\_peak}$)。
+	_gridSurplus
+	Facility Total Surplus Electricity Rate
+	剩餘回饋電量：用於分析電池充放電深度與對電網的回饋壓力。
+	_peakHours
+	(Manual Input: List<int>)
+	電網尖峰時段：由當地電力公司定義的尖峰小時索引（例如 13-17）。
+	________________
+3. 核心運算邏輯 (The Logic - Case 3 Implementation)
+Colugo 的 C# 核心將執行雙重判定（Dual-Verification）：
+A. 尖峰削減判定 (Peak Shaving Analysis)
+* 公式：
+$$Reduction \% = \frac{\max(\text{totalDemand}) - \max(\text{netPurchased})}{\max(\text{totalDemand})} \times 100\%$$
+* LEED 門檻：若 $Reduction \% \ge 10\%$，則通過基礎性能要求。
+B. 2 小時負荷轉移判定 (2-Hour Load Shifting)
+   * 檢測：在 _peakHours 範圍內，分析 BESS_Discharge（即 totalDemand - netPurchased - pvGen 的差值）。
+   * 門檻：系統必須能證明在尖峰時段內，至少有連續 2 小時提供了不低於原始尖峰負載 10% 的電力支撐。
+________________
+4. 輸出結果 (Output Parameters)
+輸出端名稱
+	類型
+	敘述
+	points
+	Integer
+	預估得分：滿足 Case 3 要求通常可獲得 1-2 分。
+	compliance
+	String
+	專業報告：輸出如 "PASS: 12.5% Peak Reduction achieved" 的技術總結。
+	p_Shaving
+	Double
+	實際的尖峰削減百分比。
+	loadShape
+	DataTree
+	處理後的數據流，可用於繪製對比圖表，展示基準與設計曲線的差異。
+	________________
+5. 給 Claude 的 C# 開發指令 (快速摘要)
+如果你現在要請 Claude 幫你寫 C#，你可以這樣說：
+「請幫我用 C# 撰寫一個名為 Colugo 插件中的元件。該元件需繼承 GH_Component，目的是評估 LEED v4.1 Grid Harmonization Case 3。輸入端需包含 totalDemand, pvGen, netPurchased, gridSurplus（均為 8760 列表），以及 peakHours 索引。
+邏輯需包含：
+   1. 找出原始與實購電量的年度最大值，判斷是否達到 10% 削減。
+   2. 判斷在 peakHours 內，儲能系統是否具備 2 小時以上的負荷轉移能力（削減量 $\ge$ 基準尖峰的 10%）。
+   3. 輸出包含詳細數據分析的 String Report。
+   4. 請加入數據長度檢查，確保輸入為 8760。代碼需符合我之前 Hagfish 插件的 C# 開發習慣。」
