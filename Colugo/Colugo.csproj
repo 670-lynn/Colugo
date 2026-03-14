@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>Colugo</RootNamespace>
+    <AssemblyName>Colugo</AssemblyName>
+    <Version>0.1.0</Version>
+    <Title>Colugo</Title>
+    <Description>A Grasshopper plugin for Rhino</Description>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grasshopper" Version="7.13.21348.13001" />
+  </ItemGroup>
+
+  <!-- Post-build: copy GHA to Grasshopper Libraries folder for debugging -->
+  <Target Name="CopyToGrasshopperLibraries" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <PropertyGroup>
+      <GrasshopperLibDir>$(AppData)\Grasshopper\Libraries\Colugo\</GrasshopperLibDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(GrasshopperLibDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GrasshopperLibDir)" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(GrasshopperLibDir)" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+  </Target>
+
+</Project>
