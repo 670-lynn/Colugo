@@ -20,6 +20,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\ReadMe_Icon.png" />
     <EmbeddedResource Include="Resources\Colugo_Logo.png" />
+    <EmbeddedResource Include="Resources\GridHarmony_Icon.png" />
   </ItemGroup>
 
   <!-- Post-build: copy GHA to Grasshopper Libraries folder for debugging -->
