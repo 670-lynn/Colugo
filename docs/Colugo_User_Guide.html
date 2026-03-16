@@ -300,11 +300,22 @@
       </ul>
     </li>
 
+    <li>
+      <div class="nav-toggle" onclick="toggleSubnav(this)">
+        <a href="#renewable-energy" style="padding:0;border:none;flex:1;">EA_Renewable Energy</a>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <ul class="nav-subnav">
+        <li><a href="#re-prereq">Pre-requisites</a></li>
+        <li><a href="#re-inputs">Inputs</a></li>
+        <li><a href="#re-outputs">Outputs</a></li>
+        <li><a href="#re-scoring">Scoring Logic</a></li>
+        <li><a href="#re-scenarios">Usage Scenarios</a></li>
+        <li><a href="#re-faq">FAQ</a></li>
+      </ul>
+    </li>
+
     <!-- ★ 未來新元件在此處新增 nav entry ★ -->
-    <!--
-    <div class="nav-group-title">IO Components</div>
-    <li><a href="#lb-export-excel">LB Data Export Excel</a></li>
-    -->
 
     <div class="nav-group-title">Reference</div>
     <li><a href="#changelog">Changelog</a></li>
@@ -336,6 +347,11 @@
     <td>LEED EA</td>
     <td><strong>EA_Grid Harmonization</strong></td>
     <td>Grid Harmonization (Case 1/2/3) scoring with battery &amp; load management</td>
+  </tr>
+  <tr>
+    <td>LEED EA</td>
+    <td><strong>EA_Renewable Energy</strong></td>
+    <td>Renewable Energy (Eq.1-5) scoring with on-site PV, off-site, EACs &amp; carbon offsets</td>
   </tr>
   <!-- ★ 未來新元件在此處新增一列 ★ -->
 </table>
@@ -791,6 +807,253 @@ Check Break output to see which strategies PASS.</code></pre>
 
 
 <!-- ──────────────────────────────────────────── -->
+<!-- ──────────────────────────────────────────── -->
+<h2 id="renewable-energy">EA_Renewable Energy</h2>
+<!-- ──────────────────────────────────────────── -->
+<!-- ──────────────────────────────────────────── -->
+
+<div class="component-header">
+  <h3>EA_Renewable Energy</h3>
+  <p>LEED v4.1 EA Credit: Renewable Energy 評估元件<br>
+     讀取 Honeybee SQL 的年度用電與現場產電，計算溫室氣體抵消率並依 Equation 1-5 及 Table 1 評分（上限 5 分 + EP）。</p>
+  <p style="color:#8899aa; font-size:13px; margin-top:8px;">
+     Reads Honeybee SQL for annual energy &amp; PV production, calculates GHG offset %
+     and points per LEED Equations 1-5 and Table 1 (max 5 pts + Exemplary Performance).</p>
+  <div class="meta">
+    Ribbon: Colugo &rarr; LEED EA &nbsp;|&nbsp;
+    Nickname: RE &nbsp;|&nbsp;
+    GUID: b3d72e18-9f5a-4c83-a6b1-7e4d2f8c0a95
+  </div>
+</div>
+
+<!-- ── Pre-requisites ── -->
+<h3 id="re-prereq">前置準備 Pre-requisites</h3>
+
+<p>Honeybee 模擬需產出以下數據：</p>
+<table>
+  <tr><th>Variable</th><th>Status</th><th>說明 Note</th></tr>
+  <tr>
+    <td><code>Facility Total Electricity Demand Rate</code><br>或 <code>Electricity:Facility</code></td>
+    <td><span class="badge badge-required">Required</span></td>
+    <td>建築總用電量（元件自動偵測 W 或 J 格式）</td>
+  </tr>
+  <tr>
+    <td><code>Facility Total Produced Electricity Energy</code><br>或 <code>Facility Total Produced Electricity Rate</code></td>
+    <td><span class="badge badge-optional">If PV</span></td>
+    <td>現場 PV 產電量（若無則假設 0）</td>
+  </tr>
+  <tr>
+    <td><code>NaturalGas:Facility</code></td>
+    <td><span class="badge badge-optional">If Gas</span></td>
+    <td>天然氣消耗量（若無則假設 0）</td>
+  </tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>與 Grid Harmonization 的差別：</strong><br>
+  Grid Harmonization 分析的是「負載管理」（削峰、移峰）；<br>
+  Renewable Energy 分析的是「碳排抵消」（你的再生能源抵消了多少 % 的建築碳排）。<br>
+  兩者讀取同一個 SQL，但計算邏輯完全不同。
+</div>
+
+
+<!-- ── Inputs ── -->
+<h3 id="re-inputs">輸入端 Inputs</h3>
+
+<h4>核心輸入 Core</h4>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>說明 Description</th></tr>
+  <tr><td>0</td><td><code>_sql</code></td><td>Text</td>
+      <td><span class="badge badge-required">Required</span></td>
+      <td>Honeybee EnergyPlus SQL 路徑</td></tr>
+  <tr><td>12</td><td><code>_run</code></td><td>Boolean</td>
+      <td>False</td>
+      <td>設為 True 才執行</td></tr>
+</table>
+
+<h4>碳排係數 Emission Coefficients</h4>
+<p>必須與 <strong>EA Prerequisite Minimum Energy Performance</strong> 使用的係數一致。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>說明 Description</th></tr>
+  <tr><td>1</td><td><code>_co2Elec</code></td><td>Number</td>
+      <td><span class="badge badge-default">0.000502</span></td>
+      <td>電力碳排係數 (tCO2e/kWh)<br>依區域電網調整</td></tr>
+  <tr><td>2</td><td><code>_co2Gas</code></td><td>Number</td>
+      <td><span class="badge badge-default">0.005302</span></td>
+      <td>天然氣碳排係數 (tCO2e/therm)<br>若無天然氣可忽略</td></tr>
+  <tr><td>3</td><td><code>_sysEff</code></td><td>Number</td>
+      <td><span class="badge badge-default">1.0</span></td>
+      <td>現場 RE 系統效率 (0-1)<br>扣除傳輸/轉換損耗（如 DC→AC）</td></tr>
+</table>
+
+<h4>五類採購策略 Procurement Categories</h4>
+<p>每類提供「年購買量 kWh」和「合約年限」。不足 15 年的合約自動按 Equation 5 折算。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Default</th><th>說明 Description</th></tr>
+  <tr><td>4-5</td><td><code>_newOffKwh / _newOffYrs</code></td>
+      <td>0 / 15</td>
+      <td><strong>新設離岸再生能源</strong> New Off-site Renewables<br>
+          上線一年內或專案開發前簽約之新增能源（如 PPA）</td></tr>
+  <tr><td>6-7</td><td><code>_exOffKwh / _exOffYrs</code></td>
+      <td>0 / 15</td>
+      <td><strong>既有離岸再生能源</strong> Existing Off-site Renewables<br>
+          購自既有再生能源供應商（如電力公司綠色費率）</td></tr>
+  <tr><td>8-9</td><td><code>_greeneKwh / _greeneYrs</code></td>
+      <td>0 / 15</td>
+      <td><strong>Green-e 認證 EACs/碳抵消</strong><br>
+          具第三方認證之能源屬性證書（上限 3 分, 300%）</td></tr>
+  <tr><td>10-11</td><td><code>_otherKwh / _otherYrs</code></td>
+      <td>0 / 15</td>
+      <td><strong>其他 EACs/碳抵消</strong><br>
+          非 Green-e 認證（上限 1 分, 150%）</td></tr>
+</table>
+
+<div class="callout callout-tip">
+  <strong>On-site 不需手動輸入。</strong> 元件自動從 SQL 讀取 PV 產電量。<br>
+  離岸和 EACs 是合約/採購行為，需手動輸入金額和年限。<br>
+  <strong>最簡單的測試：</strong>只接 <code>_sql</code> + <code>_run</code>，就能看到純 On-site PV 的得分。
+</div>
+
+
+<!-- ── Outputs ── -->
+<h3 id="re-outputs">輸出端 Outputs</h3>
+
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>說明 Description</th><th>用途 Usage</th></tr>
+  <tr><td>0</td><td><code>Pts</code></td><td>Integer</td>
+      <td>最終得分 (0-5, +EP)<br>Final Renewable Energy score</td><td>Panel</td></tr>
+  <tr><td>1</td><td><code>Break</code></td><td>Text</td>
+      <td>各採購策略得分明細（抵消 % 和對應分數）<br>Score breakdown per category</td><td>Panel</td></tr>
+  <tr><td>2</td><td><code>CalcLog</code></td><td>Text</td>
+      <td>完整計算過程 Eq.1-5（中文 + 英文）<br>Detailed Equation 1-5 calculation</td><td>Panel / 備查</td></tr>
+  <tr><td>3</td><td><code>Method</code></td><td>Text</td>
+      <td>方法論說明（中文 + 英文）<br>Methodology description</td><td>Panel / LEED 報告</td></tr>
+  <tr><td>4</td><td><code>CO2eT</code></td><td>Number</td>
+      <td>建築年度總碳排 (tCO2e)<br>Total annual GHG emissions</td><td>Panel</td></tr>
+  <tr><td>5</td><td><code>CO2eR_on</code></td><td>Number</td>
+      <td>On-site 再生能源碳排抵消量 (tCO2e)</td><td>Panel</td></tr>
+  <tr><td>6</td><td><code>EP</code></td><td>Boolean</td>
+      <td>Exemplary Performance：On-site 100% 抵消</td><td>Boolean</td></tr>
+  <tr><td>7</td><td><code>Narr</code></td><td>Text</td>
+      <td>自動產生的 LEED 報告敘述<br>Auto-generated narrative</td><td>複製到 LEED Online</td></tr>
+  <tr><td>8</td><td><code>RecPV</code></td><td>Text</td>
+      <td>建議 PV 產電量（中英文）：1-5 分 + EP 各需多少 kWh/yr，<br>
+          並標示目前已達成 / 還需增加多少<br>
+          Recommended PV for each point level</td><td>Panel / 決策參考</td></tr>
+</table>
+
+
+<!-- ── Scoring Logic ── -->
+<h3 id="re-scoring">計分邏輯 Scoring Logic</h3>
+
+<h4>核心概念</h4>
+<p>計算你的再生能源抵消了多少 % 的建築碳排（CO2e），再對照 Table 1 查得分。<br>
+   五類策略各自查表，分數可累加，<strong>上限 5 分</strong>。若 On-site 達 100% 可加 EP。</p>
+
+<h4>計算公式 Equations</h4>
+<pre><code>Eq.1: CO2eT = &Sigma;(EnergySource_i &times; CO2eCoeff_i)
+      建築年度總碳排 = 電力kWh&times;電力係數 + 天然氣therms&times;天然氣係數
+
+Eq.2: CO2eR = &Sigma;(RenewableSource_i &times; CO2eCoeff_i)
+      各類再生能源的碳排抵消量（分別計算）
+
+Eq.3: %offset = CO2eR / CO2eT
+      物理再生能源的抵消百分比 &rarr; 對照 Table 1
+
+Eq.4: %EAC = CO2eR_EAC / (CO2eT - CO2eR_on - CO2eR_new - CO2eR_exist)
+      EACs 分母須扣除物理再生能源的貢獻（避免重複計算）
+
+Eq.5: Equivalent = Annual &times; (ContractYears / 15)
+      合約不足 15 年按比例折算</code></pre>
+
+<h4>Table 1 得分門檻</h4>
+<table>
+  <tr><th>分數</th><th>On-Site</th><th>New Off-Site</th><th>Existing Off-Site</th><th>Green-e EACs</th><th>Other EACs</th></tr>
+  <tr><td>1</td><td>2%</td><td>20%</td><td>60%</td><td>100%</td><td>150%</td></tr>
+  <tr><td>2</td><td>6%</td><td>40%</td><td>80%</td><td>200%</td><td>&mdash;</td></tr>
+  <tr><td>3</td><td>15%</td><td>60%</td><td>100%</td><td>300%</td><td>&mdash;</td></tr>
+  <tr><td>4</td><td>35%</td><td>80%</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+  <tr><td>5</td><td>60%</td><td>100%</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+  <tr><td>EP</td><td>100%</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>上限注意：</strong>
+  Green-e EACs 最多 3 分 (300%)；Other EACs 最多 1 分 (150%)；Existing Off-Site 最多 3 分 (100%)。<br>
+  五類分數加總上限 5 分。只有 On-site 100% 才能獲得 EP。
+</div>
+
+
+<!-- ── Usage Scenarios ── -->
+<h3 id="re-scenarios">使用情境 Usage Scenarios</h3>
+
+<h4>情境 A：純 On-site PV（最簡單）</h4>
+<pre><code>接線：
+  _sql      &larr; "C:\...\eplusout.sql"
+  _co2Elec  &larr; 0.000502    // 依你的區域電網調整
+  _run      &larr; True
+
+不需要接其他輸入。元件自動讀取 PV 產電量。
+查看 RecPV 輸出了解目前 PV 夠拿幾分、還差多少。</code></pre>
+
+<h4>情境 B：On-site PV + 購買 Green-e EACs</h4>
+<pre><code>接線：
+  _sql         &larr; "C:\...\eplusout.sql"
+  _co2Elec     &larr; 0.000502
+  _greeneKwh   &larr; 500000     // 年購 500,000 kWh Green-e EACs
+  _greeneYrs   &larr; 15         // 15 年合約
+  _run         &larr; True
+
+預期結果：
+  On-site PV 得分 + Green-e EACs 得分，加總上限 5 分</code></pre>
+
+<h4>情境 C：多種策略組合</h4>
+<pre><code>接線：
+  _sql         &larr; "C:\...\eplusout.sql"
+  _co2Elec     &larr; 0.000502
+  _newOffKwh   &larr; 100000     // PPA 購電 100,000 kWh/yr
+  _newOffYrs   &larr; 20         // 20 年合約（超過 15 以 15 計）
+  _greeneKwh   &larr; 200000     // Green-e EACs
+  _greeneYrs   &larr; 10         // 10 年合約（自動折算 10/15）
+  _run         &larr; True
+
+Equation 5 自動折算：
+  New Off-site: 不折算（≥15 年）
+  Green-e EACs: 200,000 &times; (10/15) = 133,333 kWh（等效）</code></pre>
+
+
+<!-- ── FAQ ── -->
+<h3 id="re-faq">常見問題 FAQ</h3>
+
+<h4>Q: 碳排係數 (CO2eCoeff) 要用什麼值？</h4>
+<p>必須與 <strong>EA Prerequisite Minimum Energy Performance</strong> 使用的係數一致。
+   通常依區域電網查詢，如 EPA eGRID 或當地電力公司公告值。<br>
+   台灣電力碳排係數約 0.000502 tCO2e/kWh（2023 年值），天然氣約 0.005302 tCO2e/therm。</p>
+
+<h4>Q: On-site PV 產電量看起來不對？</h4>
+<p>確認 Honeybee 模型有 PV 系統。如果模型沒有 PV，SQL 中不會有產電數據，元件會假設 0。<br>
+   <code>_sysEff</code> 預設 1.0，若需扣除 DC→AC 轉換損耗可設為 0.85-0.95。</p>
+
+<h4>Q: 合約只有 5 年怎麼辦？</h4>
+<p>輸入 <code>_xxxYrs = 5</code>，元件會自動套用 Equation 5：<br>
+   <code>Equivalent = Annual &times; (5/15) = Annual &times; 0.333</code><br>
+   等於只算 1/3 的年購買量。合約越短，折算越多，需要買更多才能拿分。</p>
+
+<h4>Q: EACs 的分母為什麼要扣除物理再生能源？</h4>
+<p>LEED Equation 4 規定，EACs 只能抵消「物理再生能源尚未覆蓋」的碳排。<br>
+   如果 On-site + Off-site 已經抵消了 50% 碳排，EACs 的分母就是剩下的 50%。<br>
+   這是為了避免同一筆碳排被重複計算。</p>
+
+<h4>Q: 怎麼快速知道 PV 需要多大？</h4>
+<p>直接看 <code>RecPV</code> 輸出，它會列出 1-5 分 + EP 各需要多少 kWh/yr，<br>
+   並標示目前已達成或還需增加多少。</p>
+
+<h4>Q: 可以不裝 PV 嗎？</h4>
+<p>可以。完全靠離岸購電和 EACs 也能拿分，最高可到 5 分。<br>
+   但 Exemplary Performance 只有 On-site 100% 才能獲得。</p>
+
+
+<!-- ──────────────────────────────────────────── -->
 <!-- ★ TEMPLATE: Copy this section for new components ★ -->
 <!-- ──────────────────────────────────────────── -->
 <!--
@@ -813,6 +1076,17 @@ Check Break output to see which strategies PASS.</code></pre>
 
 <table>
   <tr><th>Version</th><th>Date</th><th>Changes / 變更內容</th></tr>
+  <tr>
+    <td>0.3.0</td>
+    <td>2026-03-16</td>
+    <td>
+      新增 <strong>EA_Renewable Energy</strong> 元件：讀取 Honeybee SQL 計算年度碳排與再生能源抵消率，
+      支援五類採購策略（On-site / New Off-site / Existing Off-site / Green-e EACs / Other EACs），
+      完整 Equation 1-5 及 Table 1 計分邏輯，合約年限自動折算，建議 PV 容量輸出。<br>
+      New: EA_Renewable Energy component with full Eq.1-5 scoring, 5 procurement categories,
+      contract proration, and recommended PV output.
+    </td>
+  </tr>
   <tr>
     <td>0.2.1</td>
     <td>2026-03-16</td>
