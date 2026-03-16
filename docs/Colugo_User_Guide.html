@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colugo Grasshopper Plugin - User Guide</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --sidebar-bg: #1a1a2e;
+    --sidebar-text: #c4c4d4;
+    --sidebar-active: #e94560;
+    --accent: #0f3460;
+    --accent-light: #e8eef6;
+    --border: #dee2e6;
+    --text: #2c2c2c;
+    --code-bg: #f0f2f5;
+    --pass: #28a745;
+    --fail: #dc3545;
+    --warn: #ffc107;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* ── Sidebar ── */
+  nav.sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    overflow-y: auto;
+    padding: 24px 0;
+    z-index: 100;
+  }
+  nav.sidebar .logo {
+    text-align: center;
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 16px;
+  }
+  nav.sidebar .logo h1 {
+    font-size: 22px;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+  nav.sidebar .logo small {
+    font-size: 11px;
+    color: #888;
+  }
+  nav.sidebar ul { list-style: none; }
+  nav.sidebar > ul > li { margin-bottom: 4px; }
+
+  nav.sidebar a {
+    display: block;
+    padding: 8px 24px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  nav.sidebar a:hover,
+  nav.sidebar a.active {
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+    border-left-color: var(--sidebar-active);
+  }
+  nav.sidebar .nav-group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #666;
+    padding: 16px 24px 6px;
+  }
+  nav.sidebar ul ul a { padding-left: 44px; font-size: 13px; }
+
+  /* ── Collapsible sub-nav ── */
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 24px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    user-select: none;
+  }
+  .nav-toggle:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+    border-left-color: var(--sidebar-active);
+  }
+  .nav-toggle .arrow {
+    font-size: 10px;
+    transition: transform 0.25s ease;
+    margin-left: 8px;
+  }
+  .nav-toggle.open .arrow {
+    transform: rotate(90deg);
+  }
+  .nav-subnav {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .nav-subnav.open {
+    max-height: 500px;
+  }
+
+  /* ── Main Content ── */
+  main {
+    margin-left: 280px;
+    padding: 40px 60px 80px;
+    max-width: 960px;
+    width: 100%;
+  }
+
+  h2 {
+    font-size: 28px;
+    color: var(--accent);
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--sidebar-active);
+  }
+  h2:first-of-type { margin-top: 0; }
+
+  h3 {
+    font-size: 20px;
+    color: var(--accent);
+    margin: 32px 0 12px;
+  }
+  h4 {
+    font-size: 16px;
+    color: #444;
+    margin: 20px 0 8px;
+  }
+
+  p { margin-bottom: 12px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  tr:nth-child(even) { background: #fff; }
+  tr:nth-child(odd) { background: var(--accent-light); }
+
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  .callout {
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout-info {
+    background: #e7f3ff;
+    border-left: 4px solid #3b82f6;
+  }
+  .callout-warn {
+    background: #fff8e1;
+    border-left: 4px solid var(--warn);
+  }
+  .callout-tip {
+    background: #e8f5e9;
+    border-left: 4px solid var(--pass);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .badge-required { background: var(--fail); color: #fff; }
+  .badge-optional { background: #6c757d; color: #fff; }
+  .badge-default  { background: #17a2b8; color: #fff; }
+
+  .pass { color: var(--pass); font-weight: 700; }
+  .fail { color: var(--fail); font-weight: 700; }
+
+  .flow-chart {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    font-family: monospace;
+    white-space: pre;
+    line-height: 1.8;
+    font-size: 13px;
+  }
+
+  .component-header {
+    background: linear-gradient(135deg, var(--accent) 0%, #16213e 100%);
+    color: #fff;
+    padding: 24px 28px;
+    border-radius: 10px;
+    margin: 24px 0;
+  }
+  .component-header h3 { color: #fff; margin: 0 0 6px; font-size: 22px; }
+  .component-header p { color: #b8c5d8; margin: 0; font-size: 14px; }
+  .component-header .meta { margin-top: 12px; font-size: 12px; color: #8899aa; }
+
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+  }
+
+  @media print {
+    nav.sidebar { display: none; }
+    main { margin-left: 0; max-width: 100%; padding: 20px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  SIDEBAR NAVIGATION                        -->
+<!-- ════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="logo">
+    <h1>COLUGO</h1>
+    <small>Grasshopper Plugin User Guide</small>
+  </div>
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#installation">Installation</a></li>
+
+    <div class="nav-group-title">LEED EA Components</div>
+    <li>
+      <div class="nav-toggle open" onclick="toggleSubnav(this)">
+        <a href="#grid-harmonization" style="padding:0;border:none;flex:1;">EA_Grid Harmonization</a>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <ul class="nav-subnav open">
+        <li><a href="#gh-prereq">Pre-requisites</a></li>
+        <li><a href="#gh-inputs">Inputs</a></li>
+        <li><a href="#gh-outputs">Outputs</a></li>
+        <li><a href="#gh-scoring">Scoring Logic</a></li>
+        <li><a href="#gh-scenarios">Usage Scenarios</a></li>
+        <li><a href="#gh-workflow">LEED Workflow</a></li>
+        <li><a href="#gh-faq">FAQ</a></li>
+      </ul>
+    </li>
+
+    <!-- ★ 未來新元件在此處新增 nav entry ★ -->
+    <!--
+    <div class="nav-group-title">IO Components</div>
+    <li><a href="#lb-export-excel">LB Data Export Excel</a></li>
+    -->
+
+    <div class="nav-group-title">Reference</div>
+    <li><a href="#changelog">Changelog</a></li>
+  </ul>
+</nav>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  MAIN CONTENT                               -->
+<!-- ════════════════════════════════════════════ -->
+<main>
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="overview">Overview</h2>
+<!-- ──────────────────────────────────────────── -->
+<p>
+  <strong>Colugo</strong> is a Grasshopper plugin for Rhino that automates LEED compliance
+  calculations using Honeybee / Ladybug energy simulation data. Each component reads
+  simulation outputs (SQL, CSV, or Excel), performs credit-specific analysis, and generates
+  LEED-ready documentation.
+</p>
+
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Component</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>LEED EA</td>
+    <td><strong>EA_Grid Harmonization</strong></td>
+    <td>Grid Harmonization (Case 1/2/3) scoring with battery &amp; load management</td>
+  </tr>
+  <!-- ★ 未來新元件在此處新增一列 ★ -->
+</table>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="installation">Installation</h2>
+<!-- ──────────────────────────────────────────── -->
+<ol>
+  <li>將 <code>Colugo.gha</code>、<code>System.Data.SQLite.dll</code> 及 <code>x64/SQLite.Interop.dll</code>
+      複製到 Grasshopper Libraries 資料夾：<br>
+      <code>%APPDATA%\Grasshopper\Libraries\Colugo\</code></li>
+  <li>重新啟動 Rhino &amp; Grasshopper。</li>
+  <li>在 Ribbon 的 <strong>Colugo</strong> 分頁即可找到所有元件。</li>
+</ol>
+<div class="callout callout-warn">
+  <strong>Note:</strong> 若使用 Debug 模式編譯，Post-build 會自動部署到 Libraries 資料夾。
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<!-- ──────────────────────────────────────────── -->
+<h2 id="grid-harmonization">EA_Grid Harmonization</h2>
+<!-- ──────────────────────────────────────────── -->
+<!-- ──────────────────────────────────────────── -->
+
+<div class="component-header">
+  <h3>EA_Grid Harmonization</h3>
+  <p>LEED v4.1 EA Credit: Grid Harmonization 評估元件<br>
+     讀取 Honeybee EnergyPlus SQL，評估 Case 1/2/3 計分，支援儲能電池與負載管理策略。</p>
+  <p style="color:#8899aa; font-size:13px; margin-top:8px;">
+     LEED v4.1 EA Credit: Grid Harmonization evaluator &mdash; reads Honeybee EnergyPlus SQL,
+     evaluates Case 1/2/3 scoring with battery storage and load management support.</p>
+  <div class="meta">
+    Ribbon: Colugo &rarr; LEED EA &nbsp;|&nbsp;
+    Nickname: GridHarm &nbsp;|&nbsp;
+    GUID: f7a83b12-6d4e-4c91-b5a8-3e2f1d0c9b78
+  </div>
+</div>
+
+
+<!-- ── Pre-requisites ── -->
+<h3 id="gh-prereq">前置準備 Pre-requisites (Honeybee Simulation)</h3>
+
+<p>在執行 Honeybee 能源模擬<strong>之前</strong>，確保以下 Output Variables 已啟用：</p>
+
+<table>
+  <tr><th>Variable</th><th>Status</th><th>Note</th></tr>
+  <tr>
+    <td><code>Facility Total Electricity Demand Rate</code></td>
+    <td><span class="badge badge-required">Required</span></td>
+    <td>EnergyPlus 自動產出的電力電表</td>
+  </tr>
+  <tr>
+    <td><code>Zone Ideal Loads Supply Air Total Cooling Energy</code></td>
+    <td><span class="badge badge-optional">If Ideal Loads</span></td>
+    <td>使用 Ideal Air Loads 時必須啟用</td>
+  </tr>
+  <tr>
+    <td><code>Zone Ideal Loads Supply Air Total Heating Energy</code></td>
+    <td><span class="badge badge-optional">If Ideal Loads</span></td>
+    <td>同上</td>
+  </tr>
+  <tr>
+    <td><code>Facility Total Produced Electricity Rate</code></td>
+    <td><span class="badge badge-optional">If PV</span></td>
+    <td>若有 PV 系統，需啟用以計算淨負載</td>
+  </tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>Model Type:</strong><br>
+  <strong>Ideal Air Loads</strong> &mdash; 未做詳細空調建模，需設定 COP 將 Ideal Loads 轉為電力需求。<br>
+  <strong>Detailed HVAC</strong> &mdash; 已建模具體空調系統，Facility Total Electricity Demand Rate 已包含 HVAC 用電，COP 保持預設即可。
+</div>
+
+
+<!-- ── Inputs ── -->
+<h3 id="gh-inputs">輸入端 Inputs</h3>
+
+<h4>核心輸入 Core</h4>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td>0</td><td><code>_sql</code></td><td>Text</td>
+      <td><span class="badge badge-required">Required</span></td>
+      <td>Honeybee EnergyPlus 輸出的 <code>eplusout.sql</code> 完整路徑</td></tr>
+  <tr><td>17</td><td><code>_run</code></td><td>Boolean</td>
+      <td>False</td>
+      <td>設為 True 才執行計算</td></tr>
+</table>
+
+<h4>尖峰時段定義 On-peak Definition</h4>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td>1</td><td><code>_peakStart</code></td><td>Integer</td>
+      <td><span class="badge badge-default">13</span></td>
+      <td>On-peak 開始小時 (0-23)</td></tr>
+  <tr><td>2</td><td><code>_peakEnd</code></td><td>Integer</td>
+      <td><span class="badge badge-default">17</span></td>
+      <td>On-peak 結束小時 (0-23)</td></tr>
+  <tr><td>3</td><td><code>_peakDays</code></td><td>List&lt;Int&gt;</td>
+      <td><span class="badge badge-default">0-4</span></td>
+      <td>高峰日 (0=Mon..6=Sun)，預設 Mon-Fri</td></tr>
+</table>
+
+<div class="callout callout-info">
+  尖峰時段應依 <strong>EA Prerequisite Minimum Energy Performance</strong> 定義，配合當地電力公司費率結構。<br>
+  On-peak period should align with the EA Prerequisite definition and local utility rate structure.
+</div>
+
+<h4>COP 轉換 COP Conversion（Ideal Air Loads 專用）</h4>
+<p>若模型使用 Ideal Air Loads（未做詳細空調建模），需透過 COP 將冷/熱負載轉為等效電力需求。<br>
+   若已使用詳細 HVAC 模型，<code>Facility Total Electricity Demand Rate</code> 已包含空調用電，COP 保持預設即可。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td>4</td><td><code>_copC</code></td><td>Number</td>
+      <td><span class="badge badge-default">3.0</span></td>
+      <td>冷氣 COP (Ideal Loads cooling &div; COP = 電力需求)</td></tr>
+  <tr><td>5</td><td><code>_copH</code></td><td>Number</td>
+      <td><span class="badge badge-default">1.0</span></td>
+      <td>暖氣 COP (電熱=1.0, 熱泵=2.5-4.0)</td></tr>
+</table>
+
+<h4>尖峰負載最佳化 Peak Load Optimization（非電池卸載策略）</h4>
+<p>代表在需量反應 (DR) 事件期間，你能「關掉」多少設備來減少用電。<br>
+   這不是改變建築作息，而是緊急時「忍耐一下少用一點」。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>說明 Description</th></tr>
+  <tr><td>6</td><td><code>_shed</code></td><td>List&lt;Number&gt;</td>
+      <td><span class="badge badge-optional">Optional</span></td>
+      <td>尖峰時段每小時可卸載的 kW 數，支援 1 / 24 / 8760 筆<br>
+          Load reduction (kW) per hour during on-peak</td></tr>
+</table>
+
+<div class="callout callout-tip">
+  <strong>什麼是「卸載」？</strong><br>
+  就是電力公司通知你「電網快過載了，請減少用電」時，你的應急計畫能關掉多少 kW：
+</div>
+
+<table>
+  <tr><th>卸載行動</th><th>估算方式</th><th>典型節省</th></tr>
+  <tr><td>關掉走廊 / 停車場照明</td><td>照明總功率 &times; 關閉比例</td><td>5-30 kW</td></tr>
+  <tr><td>空調溫度從 24&deg;C 調高到 26&deg;C</td><td>約降低冷房負載 10-15%</td><td>10-50 kW</td></tr>
+  <tr><td>關掉飲水機 / 自販機</td><td>每台約 0.5-1 kW</td><td>2-5 kW</td></tr>
+  <tr><td>停止部分電梯運行</td><td>每台電梯 ~15-30 kW</td><td>15-30 kW</td></tr>
+  <tr><td>關掉非必要排風機</td><td>風機額定功率</td><td>5-20 kW</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>需要卸載多少？</strong> 查看 <code>RecBESS</code> 輸出，裡面會告訴你精確的最低卸載 kW 數。<br>
+  例如你的建築尖峰 55.8 kW，<code>RecBESS</code> 顯示「卸載 &ge; 5.6 kW」，
+  那只要關掉幾台飲水機就夠了。<br>
+  <strong>How much to shed?</strong> Check the <code>RecBESS</code> output for the exact minimum kW needed.
+</div>
+
+<h4>怎麼在 Grasshopper 中接線</h4>
+
+<p><strong>方法 1 — 最簡單：一個 Number Slider</strong></p>
+<pre><code>Number Slider [6] ──&rarr; _shed
+
+意思：所有 on-peak 小時統一卸載 6 kW
+適合：快速測試、已知可卸載總量</code></pre>
+
+<p><strong>方法 2 — Gene Pool（視覺化 24 小時排程）</strong></p>
+<pre><code>Gene Pool (24 genes, Min=0, Max=30) ──&rarr; _shed
+
+每根滑桿 = 該小時的卸載 kW
+拉出長條圖，一眼就看到排程
+元件只在 on-peak 時段套用，off-peak 自動忽略</code></pre>
+
+<p><strong>方法 3 — 8760 筆完整排程</strong></p>
+<pre><code>GHPython / CSV ──&rarr; _shed (8760 values)
+
+適合：夏季卸載多、冬季少等精細控制</code></pre>
+
+<h4>彈性營運情境 Flexible Operating Scenarios</h4>
+<p>代表你「重新設計建築的營運排程」後，負載曲線變成什麼樣子。<br>
+   例如：原本下午 2 點全力開空調，改成早上 10 點就預冷，下午關主機。負載沒有消失，只是搬到別的時間去了。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>說明 Description</th></tr>
+  <tr><td>7</td><td><code>_proposed</code></td><td>List&lt;Number&gt;</td>
+      <td><span class="badge badge-optional">Optional</span></td>
+      <td>調整排程後的逐時電力需求 kW（8760 值）<br>Proposed demand after schedule modification</td></tr>
+</table>
+
+<div class="callout callout-info">
+  <strong>如何產生？</strong> 在 Honeybee 中建立第二個模擬方案（修改空調/設備排程），取得 8760 負載數據接入此處。<br>
+  <strong>多數專案不需要此輸入。</strong> 電池 + 卸載 或 電池 + 韌性計劃 就能拿滿 2 分，不必跑兩次模擬。<br>
+  只有當其他策略都不足以拿分時，才需要動用 Flexible Operating。
+</div>
+
+<h4>儲能電池 Battery Energy Storage System (BESS)</h4>
+<p>模擬電池在離峰充電、尖峰放電的行為。充電會增加離峰時段的電網負載，放電會削減尖峰時段的電網負載。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td>8</td><td><code>_battKwh</code></td><td>Number</td>
+      <td><span class="badge badge-default">0</span></td>
+      <td>電池總容量 kWh (<strong>0 = 不啟用</strong>)</td></tr>
+  <tr><td>9</td><td><code>_chgKw</code></td><td>Number</td>
+      <td><span class="badge badge-default">50</span></td>
+      <td>最大充電功率 kW</td></tr>
+  <tr><td>10</td><td><code>_disKw</code></td><td>Number</td>
+      <td><span class="badge badge-default">50</span></td>
+      <td>最大放電功率 kW</td></tr>
+  <tr><td>11</td><td><code>_eff</code></td><td>Number</td>
+      <td><span class="badge badge-default">0.90</span></td>
+      <td>充放電往返效率 (lithium ~0.85-0.95)</td></tr>
+  <tr><td>12</td><td><code>_socMin</code></td><td>Number</td>
+      <td><span class="badge badge-default">0.1</span></td>
+      <td>SOC 下限 (保護電池壽命)</td></tr>
+  <tr><td>13</td><td><code>_socMax</code></td><td>Number</td>
+      <td><span class="badge badge-default">0.9</span></td>
+      <td>SOC 上限</td></tr>
+</table>
+
+<h4>行政項目 Case 1 / Case 2 / Grid Resilience</h4>
+<p>這三項是行政/合約性質，不需要模擬計算，只需要勾選有或無。</p>
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+  <tr><td>14</td><td><code>_case1</code></td><td>Boolean</td>
+      <td><span class="badge badge-default">False</span></td>
+      <td>Enrolled in DR program (2 pts)</td></tr>
+  <tr><td>15</td><td><code>_case2</code></td><td>Boolean</td>
+      <td><span class="badge badge-default">False</span></td>
+      <td>DR capable building (1 pt)</td></tr>
+  <tr><td>16</td><td><code>_resil</code></td><td>Boolean</td>
+      <td><span class="badge badge-default">False</span></td>
+      <td>Utility has grid resilience program (Case 3, 1 pt)</td></tr>
+</table>
+
+<div class="callout callout-warn">
+  Case 1 與 Case 2 <strong>互斥</strong>：若 Case 1 = True，Case 2 自動不計分。<br>
+  Case 1 &amp; Case 2 are mutually exclusive. If Case 1 = True, Case 2 is automatically ignored.
+</div>
+
+
+<!-- ── Outputs ── -->
+<h3 id="gh-outputs">輸出端 Outputs</h3>
+
+<table>
+  <tr><th>#</th><th>Name</th><th>Type</th><th>說明 Description</th><th>用途 Usage</th></tr>
+  <tr><td>0</td><td><code>Pts</code></td><td>Integer</td>
+      <td>最終得分 (0-2)<br>Final Grid Harmonization score</td><td>Panel 顯示</td></tr>
+  <tr><td>1</td><td><code>Break</code></td><td>Text</td>
+      <td>各 Case / 策略得分明細<br>Score breakdown by Case and strategy</td><td>Panel 顯示</td></tr>
+  <tr><td>2</td><td><code>CalcLog</code></td><td>Text</td>
+      <td>完整計算過程（中文 + 英文）<br>Detailed calculation process</td><td>Panel / 備查文件</td></tr>
+  <tr><td>3</td><td><code>Method</code></td><td>Text</td>
+      <td>方法論說明（中文 + 英文）<br>Methodology description</td><td>Panel / LEED 報告引用</td></tr>
+  <tr><td>4</td><td><code>Base</code></td><td>List (8760)</td>
+      <td>基準電力負載 kW<br>Baseline electrical load</td><td>圖表視覺化</td></tr>
+  <tr><td>5</td><td><code>Net</code></td><td>List (8760)</td>
+      <td>扣除 PV 後淨負載 kW<br>Net load after PV deduction</td><td>圖表視覺化</td></tr>
+  <tr><td>6</td><td><code>Mod</code></td><td>List (8760)</td>
+      <td>策略實施後負載 kW<br>Modified load after all strategies</td><td>圖表視覺化</td></tr>
+  <tr><td>7</td><td><code>SOC</code></td><td>List (8760)</td>
+      <td>電池逐時電量狀態 (0-1)<br>Battery state of charge</td><td>圖表視覺化</td></tr>
+  <tr><td>8</td><td><code>PeakRed</code></td><td>Number</td>
+      <td>整體尖峰削減百分比<br>Overall on-peak reduction %</td><td>Panel 顯示</td></tr>
+  <tr><td>9</td><td><code>Annual</code></td><td>DataTree</td>
+      <td>年度負載曲線：{0}=基準, {1}=策略後 (各 8760 值)<br>Annual load curves: baseline vs modified</td>
+      <td>年度曲線圖</td></tr>
+  <tr><td>10</td><td><code>TypDay</code></td><td>DataTree</td>
+      <td>典型日曲線：{0}=工作日基準, {1}=假日基準, {2}=工作日策略後, {3}=假日策略後 (各 24 值)<br>
+          Typical day profiles: workday/weekend &times; baseline/modified</td>
+      <td>典型日曲線圖</td></tr>
+  <tr><td>11</td><td><code>Narr</code></td><td>Text</td>
+      <td>自動產生的 LEED Case 3 報告敘述<br>Auto-generated LEED narrative</td>
+      <td>直接複製到 LEED Online</td></tr>
+  <tr><td>12</td><td><code>Warn</code></td><td>Boolean</td>
+      <td>Secondary Peak 警告：策略是否產生新的更高峰值<br>True if strategies create a new higher peak</td>
+      <td>Boolean 顯示</td></tr>
+  <tr><td>13</td><td><code>RecBESS</code></td><td>Text</td>
+      <td>建議電池容量（中文 + 英文）：基於二分搜尋法，計算出拿到 1 分與 2 分分別需要的最低電池容量，<br>
+          並列出最佳組合建議。<br>
+          Recommended minimum BESS capacity for 1pt and 2pts with combination suggestions</td>
+      <td>Panel / 決策參考</td></tr>
+</table>
+
+
+<!-- ── Scoring Logic ── -->
+<h3 id="gh-scoring">計分邏輯 Scoring Logic</h3>
+
+<h4>學分架構 Credit Structure（上限 2 分）</h4>
+<pre><code>Case 1 (DR Program Enrolled)  = 2 pts   ┐ mutually exclusive
+Case 2 (DR Capable)           = 1 pt    ┘
+                                          AND / OR
+Case 3 (Load Flexibility)    = 1-2 pts   (4 sub-strategies, each 1pt, cap 2)
+
+Total = min(2, max(Case1, Case2) + Case3)</code></pre>
+
+<h4>Case 3 四項子策略（每項 1 分，上限 2 分）</h4>
+<table>
+  <tr><th>策略 Strategy</th><th>資料來源 Data Source</th><th>通過條件 Pass Criteria</th><th>分數</th></tr>
+  <tr>
+    <td><strong>尖峰負載最佳化</strong><br>Peak Load Optimization</td>
+    <td><code>_shed</code> 卸載排程</td>
+    <td>卸載後尖峰 &le; 基準 &times; 90%</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td><strong>現場儲能</strong><br>On-site Storage</td>
+    <td>電池參數</td>
+    <td>電池放電後尖峰 &le; 基準 &times; 90%</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td><strong>彈性營運情境</strong><br>Flexible Operating</td>
+    <td><code>_proposed</code> 新排程</td>
+    <td>&ge;10% 尖峰負載移動 &ge;2 小時</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td><strong>電網韌性技術</strong><br>Grid Resilience</td>
+    <td><code>_resil</code> 布林值</td>
+    <td>電力公司有韌性計劃即可</td>
+    <td>1</td>
+  </tr>
+</table>
+
+<div class="callout callout-warn">
+  <strong>禁止雙重計分 No Double-dipping：</strong>每項策略使用獨立的資料來源。
+  電池放電只能算「現場儲能」；卸載只能算「尖峰負載最佳化」。同一個削減動作不能同時計入多項策略。
+</div>
+
+<pre><code>case3_points = min(2,
+    peak_opt_point      // from shed schedule
+  + storage_point       // from battery simulation
+  + flexible_point      // from proposed vs baseline comparison
+  + resilience_point    // from user boolean
+)</code></pre>
+
+
+<!-- ── Usage Scenarios ── -->
+<h3 id="gh-scenarios">使用情境 Usage Scenarios</h3>
+
+<h4>情境 A：只有電池 Battery Only</h4>
+<pre><code>接線：
+  _sql      &larr; "C:\...\eplusout.sql"
+  _battKwh  &larr; 38          // 查看 RecBESS 建議的最低容量
+  _disKw    &larr; 6
+  _chgKw    &larr; 50
+  _eff      &larr; 0.90
+  _run      &larr; True
+
+預期結果：
+  電池削減 on-peak &ge;10% &rarr; On-site Storage = 1 分
+  查看 RecBESS 確認最低電池容量</code></pre>
+
+<h4>情境 B：電池 + 卸載 = 拿滿 2 分（最常見）</h4>
+<pre><code>接線：
+  _sql      &larr; "C:\...\eplusout.sql"
+  _battKwh  &larr; 38          // 電池容量（參考 RecBESS）
+  _disKw    &larr; 6
+  _shed     &larr; [6]          // Number Slider，卸載 6 kW（參考 RecBESS 建議）
+  _run      &larr; True
+
+預期結果：
+  Peak Load Optimization (卸載 6kW): &ge;10% &rarr; 1 分
+  On-site Storage (電池):            &ge;10% &rarr; 1 分
+  Case 3 = min(2, 1+1) = 2 分
+
+提示：RecBESS 輸出會告訴你「卸載 &ge; X kW」的精確值，
+     用 Number Slider 設成那個值就行了。</code></pre>
+
+<h4>情境 C：DR 能力 + 電池 = 2 分</h4>
+<pre><code>接線：
+  _sql      &larr; "C:\...\eplusout.sql"
+  _case2    &larr; True         // 建築具備 DR 基礎設施
+  _battKwh  &larr; 38           // 參考 RecBESS
+  _disKw    &larr; 6
+  _run      &larr; True
+
+預期結果：
+  Case 2 = 1 分
+  On-site Storage = 1 分
+  Total = min(2, 1+1) = 2 分</code></pre>
+
+<h4>情境 D：完整分析 Full Analysis</h4>
+<pre><code>接線：
+  _sql       &larr; "C:\...\eplusout.sql"
+  _peakStart &larr; 14
+  _peakEnd   &larr; 18
+  _copC      &larr; 3.5
+  _shed      &larr; Gene Pool (24 genes) 或 Number Slider
+  _proposed  &larr; 第二次 Honeybee 模擬的 8760 負載（多數專案不需要）
+  _battKwh   &larr; 參考 RecBESS 建議
+  _resil     &larr; True
+_run       &larr; True
+
+Check Break output to see which strategies PASS.</code></pre>
+
+
+<!-- ── LEED Workflow ── -->
+<h3 id="gh-workflow">LEED 文件產出流程 Documentation Workflow</h3>
+
+<div class="flow-chart">
+步驟 1  執行元件，確認 <strong>Pts</strong> &ge; 目標分數
+   |     Execute component, confirm Pts &ge; target
+   |
+步驟 2  複製 <strong>Narr</strong> 輸出 &rarr; 貼入 LEED Online「Narrative or Report」欄位
+   |     Copy Narr output &rarr; paste into LEED Online
+   |
+步驟 3  將 <strong>Annual</strong> / <strong>TypDay</strong> DataTree 接到圖表元件
+   |     &rarr; 匯出年度負載曲線 + 典型日曲線為 PDF 佐證
+   |     Connect to chart components &rarr; export as PDF
+   |
+步驟 4  複製 <strong>CalcLog</strong> &rarr; 作為計算過程備查文件
+   |     Copy CalcLog &rarr; archive as calculation backup
+   |
+步驟 5  複製 <strong>Method</strong> &rarr; 附於報告中說明分析方法
+   |     Copy Method &rarr; attach to report as methodology
+   |
+步驟 6  查看 <strong>RecBESS</strong> &rarr; 確認電池容量是否足夠，或調整設計
+         Check RecBESS &rarr; verify battery sizing or adjust design
+</div>
+
+
+<!-- ── FAQ ── -->
+<h3 id="gh-faq">常見問題 FAQ</h3>
+
+<h4>Q: SQL 讀不到數據？SQL reads no data?</h4>
+<p>確認 Honeybee 模擬時 <code>HB Simulation Control</code> 有啟用 <code>Facility Total Electricity Demand Rate</code> 輸出。
+   同時確認 SQL 檔案路徑正確且模擬已成功完成。</p>
+
+<h4>Q: 基準負載看起來太低？Baseline load seems too low?</h4>
+<p>若使用 Ideal Air Loads，請檢查 COP 值。冷氣 COP 設太高會低估電力需求。
+   可嘗試 <code>_copC = 2.5</code> 做較保守的估算。</p>
+
+<h4>Q: Secondary Peak Warning = True？</h4>
+<p>電池在離峰充電產生了比原始尖峰更高的負載。
+   解法：降低 <code>_chgKw</code>（充電功率）讓充電更慢更平均。</p>
+
+<h4>Q: Flexible Operating 一直 FAIL？</h4>
+<p>確認：(1) <code>_proposed</code> 有 8760 筆值；(2) 尖峰時段的 proposed 確實比 baseline 少了 &ge;10%；
+   (3) 增加的離峰負載出現在距尖峰 &ge;2 小時的時段。<br>
+   <strong>多數專案不需要 Flexible Operating。</strong>可用電池 + 卸載或電池 + 韌性計劃拿滿 2 分。</p>
+
+<h4>Q: 電池容量該設多大？How to estimate battery capacity?</h4>
+<p>最簡單的方式：<strong>直接看 <code>RecBESS</code> 輸出</strong>，元件會自動用二分搜尋法計算最低容量。<br>
+   粗估公式：<code>電池 kWh &ge; 尖峰需求 &times; 10% &times; on-peak 小時數 &div; 放電效率</code><br>
+   例如：500 kW 尖峰, 5 小時 on-peak &rarr; <code>500 &times; 0.1 &times; 5 &div; 0.9 &approx; 278 kWh</code></p>
+
+<h4>Q: 可以不用電池嗎？Can I use this without a battery?</h4>
+<p>可以。設 <code>_battKwh = 0</code>，使用卸載（<code>_shed</code>）+ 韌性計劃（<code>_resil</code>）= 2 分。
+   甚至不需要任何模擬以外的數據。</p>
+
+<h4>Q: _shed 怎麼接最方便？需要卸載多少？</h4>
+<p><strong>先看 <code>RecBESS</code> 輸出</strong>，它會告訴你精確的最低卸載量。<br>
+   例如顯示「卸載 &ge; 5.6 kW」，那就用一個 <strong>Number Slider [6]</strong> 接到 <code>_shed</code> 就行了。<br>
+   5.6 kW 約等於關掉幾台飲水機或部分走廊照明，對多數建築來說很容易達成。<br>
+   想要更細緻的控制，可用 <strong>Gene Pool</strong>（24 genes）做每小時排程。</p>
+
+
+<!-- ──────────────────────────────────────────── -->
+<!-- ★ TEMPLATE: Copy this section for new components ★ -->
+<!-- ──────────────────────────────────────────── -->
+<!--
+<h2 id="new-component-id">New Component Name</h2>
+<div class="component-header">
+  <h3>New Component Name</h3>
+  <p>Description here.</p>
+  <div class="meta">Ribbon: Colugo &rarr; Category | Nickname: XXX | GUID: xxx</div>
+</div>
+<h3>Inputs</h3>
+...
+<h3>Outputs</h3>
+...
+-->
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="changelog">版本紀錄 Changelog</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<table>
+  <tr><th>Version</th><th>Date</th><th>Changes / 變更內容</th></tr>
+  <tr>
+    <td>0.2.1</td>
+    <td>2026-03-16</td>
+    <td>
+      新增輸出 <strong>RecBESS</strong>：基於二分搜尋法自動計算最低電池容量建議（1 分 / 2 分組合）。<br>
+      New output: Recommended BESS capacity via binary search for 1pt and 2pts combinations.
+    </td>
+  </tr>
+  <tr>
+    <td>0.2.0</td>
+    <td>2026-03-16</td>
+    <td>
+      新增 <strong>EA_Grid Harmonization</strong> 元件：直接讀取 Honeybee SQL，支援電池儲能、卸載排程、彈性營運、電網韌性。
+      完整 Case 1/2/3 計分邏輯（禁止雙重計分）。中英雙語計算過程與方法論輸出。<br>
+      New: EA_Grid Harmonization component with full Case 1/2/3 scoring, bilingual outputs.
+    </td>
+  </tr>
+  <tr>
+    <td>0.1.0</td>
+    <td>2026-03-14</td>
+    <td>初始版本：LB Data Export Excel, Grid Harmony Evaluator (legacy)。</td>
+  </tr>
+</table>
+
+
+<footer>
+  Colugo Grasshopper Plugin &copy; 2026 &nbsp;|&nbsp;
+  Built with Grasshopper SDK for Rhino 7 &nbsp;|&nbsp;
+  Document version: 2026-03-16
+</footer>
+
+</main>
+
+<script>
+function toggleSubnav(el) {
+  el.classList.toggle('open');
+  var sub = el.nextElementSibling;
+  if (sub && sub.classList.contains('nav-subnav')) {
+    sub.classList.toggle('open');
+  }
+}
+</script>
+</body>
+</html>

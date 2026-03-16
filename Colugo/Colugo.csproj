@@ -14,6 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="7.13.21348.13001" />
     <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1001" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.118" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
@@ -31,6 +32,9 @@
     <MakeDir Directories="$(GrasshopperLibDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GrasshopperLibDir)" />
     <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(GrasshopperLibDir)" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+    <Copy SourceFiles="$(TargetDir)System.Data.SQLite.dll" DestinationFolder="$(GrasshopperLibDir)" Condition="Exists('$(TargetDir)System.Data.SQLite.dll')" />
+    <MakeDir Directories="$(GrasshopperLibDir)x64" Condition="Exists('$(TargetDir)x64\SQLite.Interop.dll')" />
+    <Copy SourceFiles="$(TargetDir)x64\SQLite.Interop.dll" DestinationFolder="$(GrasshopperLibDir)x64\" Condition="Exists('$(TargetDir)x64\SQLite.Interop.dll')" />
   </Target>
 
 </Project>
