@@ -16,7 +16,7 @@ namespace Colugo.Components
                 "LEED v4.1 EA Credit: Grid Harmonization.\n" +
                 "Baseline = NetPurchased (grid-facing demand after PV).\n" +
                 "Evaluates BESS contribution to peak shaving and load shifting.",
-                "Colugo", "LEED")
+                "Colugo", "LEED EA")
         {
         }
 

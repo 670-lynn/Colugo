@@ -11,7 +11,7 @@ namespace Colugo.Components
         public ReadmeComponent()
             : base("LEED v4.1 Readme", "Readme",
                 "Displays an overview of LEED v4.1 BD+C, including credit categories, scorecard, and certification levels.",
-                "Colugo", "LEED")
+                "Colugo", "LEED IP")
         {
         }
 
